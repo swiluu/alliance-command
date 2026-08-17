@@ -1,0 +1,13 @@
+<!--
+  Zeichen der Anwendung: offener Bogen als C, Sand auf dem Grundton.
+
+  Bewusst gezeichnet statt gesetzt – kein Buchstabe aus einer Schriftart.
+  Rajdhani steht beim Bau nicht zur Verfügung, und ein Text-Element sähe auf
+  jedem Gerät anders aus. Der Bogen bleibt bis hinunter auf 16 px als Form
+  erkennbar; Entwürfe mit Schild oder Fadenkreuz taten das nicht.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Alliance Command">
+  <rect width="512" height="512" rx="113" fill="#0B0F0D"/>
+  <path d="M 377.04 350.57 A 154 154 0 1 1 377.04 161.43"
+        fill="none" stroke="#C9A24B" stroke-width="67"/>
+</svg>

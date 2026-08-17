@@ -1,0 +1,564 @@
+// ============================================================
+// Alliance Command – Prisma Schema (SQLite)
+// Last War: Survival
+// ============================================================
+//
+// Grundidee: Wüstensturm und Schluchtsturm sind strukturell identisch.
+// Sie teilen sich EINEN Player-Stamm und dieselben Tabellen; getrennt
+// werden sie ausschliesslich über das Feld `eventKey`. Ein neues
+// taktisches Event = ein neuer EventConfig-Datensatz, kein neues Modell.
+//
+// SQLite kennt keine Enums – alle "Enum"-Felder sind Strings, deren
+// erlaubte Werte in src/lib/constants.ts als const-Union definiert sind.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ── AUTH ────────────────────────────────────────────────────
+
+model User {
+  id           String   @id @default(cuid())
+  username     String   @unique
+  passwordHash String
+  displayName  String
+  isSuperadmin Boolean  @default(false)
+  /// Selbst registriertes Allianzmitglied: darf lesen und sich selbst
+  /// abmelden, sonst nichts. Rechte kommen nicht aus ModuleAccess, sondern
+  /// aus dieser Rolle – sonst müsste man für hundert Konten Zeilen pflegen.
+  isMember     Boolean  @default(false)
+  /// R4-Rang: ein Mitglied mit Einblick in die Führungsdaten – Fixplätze und
+  /// das Aktivitätsprotokoll. Ändern darf es weiterhin nichts.
+  isR4         Boolean  @default(false)
+  /// Verknüpfung zum Kadereintrag. Erst dadurch weiss das Konto, wer es ist –
+  /// Grundlage für die eigene Seite und die Selbstabmeldung.
+  playerId     String?  @unique
+  /// Sprache der Oberfläche, "de" oder "en". Hängt am Konto und nicht am
+  /// Gerät: die Allianz ist gemischt, und wer einmal umgestellt hat, will es
+  /// auf dem Handy nicht noch einmal tun.
+  locale       String   @default("de")
+  createdAt    DateTime @default(now())
+  // Wer ein Konto anlegt oder ein Passwort zurücksetzt, kennt das Passwort.
+  // Deshalb muss der Besitzer es beim nächsten Login selbst neu setzen.
+  mustChangePassword Boolean @default(true)
+
+  /// Fehlversuche in Folge. Wird bei jeder erfolgreichen Anmeldung geleert.
+  failedLogins Int       @default(0)
+  /// Bis hierhin gesperrt. Kurz gehalten: eine dauerhafte Sperre könnte
+  /// jemand missbrauchen, um ein fremdes Konto lahmzulegen.
+  lockedUntil  DateTime?
+
+  player        Player?        @relation(fields: [playerId], references: [id], onDelete: SetNull)
+  accounts      Account[]
+  sessions      Session[]
+  moduleAccess  ModuleAccess[]
+  activityLog   ActivityLog[]
+}
+
+// Von NextAuth/PrismaAdapter benötigt. Wir nutzen ausschliesslich den
+// Credentials-Provider, das Modell bleibt aber für den Adapter Pflicht.
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ── ZUGRIFFSSYSTEM ──────────────────────────────────────────
+
+// module: "wuestensturm" | "schluchtsturm" | "zug" | "warzone" | "pyramid"
+// level:  "NONE" | "READ" | "EDIT"
+model ModuleAccess {
+  id     String @id @default(cuid())
+  userId String
+  module String
+  level  String @default("NONE")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, module])
+  @@index([module])
+}
+
+model ActivityLog {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  userId    String?
+  userName  String // denormalisiert, damit der Feed gelöschte User überlebt
+  module    String? // Event-/Modul-Badge im Feed
+  action    String
+  detail    String?
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([createdAt])
+}
+
+// ── SPIELER-STAMM (gemeinsam für alle Events) ───────────────
+
+model Player {
+  id          String  @id @default(cuid())
+  name        String  @unique
+  allianceTag String  @default("[R3]")
+  notes       String?
+  // Stabile Spieler-ID von lastwarrank.com. Sobald sie gesetzt ist, läuft der
+  // Abgleich darüber – Namensänderungen im Spiel brechen ihn dann nicht mehr.
+  lwrId       Int?    @unique
+  // Hero Power aus lastwarrank.com bzw. CSV-Import, roher Anzeigewert
+  // ("202.59M") plus normalisierter Zahlenwert für Sortierung.
+  thpRaw      String?
+  thpValue    Float?
+  thpUpdated  DateTime?
+
+  createdAt DateTime @default(now())
+  // Allianzmitglieder ausserhalb des Kaders. Der Zug läuft allianzweit,
+  // deshalb fahren und bekommen VIP auch Leute, die nicht im Kader stehen.
+  // Sie zählen nicht gegen MAX_PLAYERS und tauchen in Wüstensturm,
+  // Schluchtsturm und im lastwarrank-Abgleich nicht auf.
+  isExternal Boolean @default(false)
+  // Ausgetretene Spieler werden nicht gelöscht, sondern nur hier markiert.
+  // Sonst rissen die Kaskaden alle Zuteilungen und Historie-Einträge mit –
+  // vergangene Wochenplanungen müssen aber zeigen, wer damals dabei war.
+  leftAt    DateTime?
+  /// Wann festgestellt wurde, dass der Spiel-Account gelöscht ist.
+  ///
+  /// Erkennbar daran, dass die Quelle statt des Namens einen Platzhalter
+  /// führt ("Kommandant" plus Kennung). Das ist endgültig – anders als ein
+  /// Allianzwechsel kommt dieser Spieler nicht zurück. Der Name im Kader
+  /// bleibt trotzdem der letzte echte, sonst wüsste niemand mehr, wer es war.
+  accountDeletedAt DateTime?
+
+  eventStates   PlayerEventState[]
+  registrations RegistrationStatus[]
+  assignments   WeeklyAssignment[]   @relation("AssignedPlayer")
+  replacedBy    WeeklyAssignment[]   @relation("ReplacedPlayer")
+  rotations     RotationHistory[]
+  bans          BanRecord[]
+  zug           ZugPlayer?
+  queueEntry    R4RotationQueue?
+  absences      Absence[]
+  konto         User?
+  plannedDays   ZugDay[]             @relation("PlannedDriver")
+  actualDays    ZugDay[]             @relation("ActualDriver")
+  vipDays       ZugDay[]             @relation("VipPlayer")
+  vsScores      VsScore[]
+  aliases       PlayerAlias[]
+  r2Records     R2Record[]
+  nameChanges   NameChange[]
+
+  @@index([leftAt])
+  @@index([isExternal])
+}
+
+/// Schreibweise aus einer fremden Quelle, die sich nicht von selbst auf einen
+/// Kadereintrag zurückführen lässt. Die Normalisierung (siehe src/lib/vs.ts)
+/// fängt Zierzeichen und Sonderbuchstaben ab – "Alphabull ツ" findet sich
+/// darüber. Was übrig bleibt, sind echte Abweichungen wie "Mane994" gegen
+/// "Mane 武"; die stehen hier und gelten dann dauerhaft.
+model PlayerAlias {
+  id String @id @default(cuid())
+  /// Normalisierter Fremdname, kleingeschrieben und ohne Zierzeichen.
+  key      String @unique
+  playerId String
+
+  player Player @relation(fields: [playerId], references: [id], onDelete: Cascade)
+
+  @@index([playerId])
+}
+
+// ── TAKTISCHE EVENTS ────────────────────────────────────────
+
+model EventConfig {
+  eventKey       String  @id // "wuestensturm" | "schluchtsturm"
+  displayName    String
+  totalWeeks     Int     @default(53)
+  // JSON: PositionGroup[] – siehe src/lib/event-layouts.ts
+  positionLayout String
+  sortOrder      Int     @default(0)
+}
+
+model Season {
+  eventKey    String @id
+  currentWeek Int    @default(1)
+}
+
+model PlayerEventState {
+  id          String  @id @default(cuid())
+  playerId    String
+  eventKey    String
+  isFixplatz  Boolean @default(false)
+  isBanned    Boolean @default(false)
+  bannedSince Int?
+  bannedUntil Int?
+  banReason   String?
+  // Jäger-Build: relevant für Schluchtsturm-Positionen mit Jäger-Pflicht.
+  // Pro Event gepflegt, weil ein Spieler je Event einen anderen Marsch stellt.
+  isHunterBuild Boolean @default(false)
+
+  player Player @relation(fields: [playerId], references: [id], onDelete: Cascade)
+
+  @@unique([playerId, eventKey])
+  @@index([eventKey])
+}
+
+// Anmeldung für die jeweils laufende Woche.
+// status: "TEIL" | "NICHT_TEIL" – es gibt bewusst keinen dritten Zustand.
+model RegistrationStatus {
+  id       String @id @default(cuid())
+  playerId String
+  eventKey String
+  status   String @default("NICHT_TEIL")
+
+  player Player @relation(fields: [playerId], references: [id], onDelete: Cascade)
+
+  @@unique([playerId, eventKey])
+  @@index([eventKey])
+}
+
+// Eine Zeile = ein Spieler auf einem Slot in einer Woche.
+// team: "A" | "B" | null (null = Bank)
+model WeeklyAssignment {
+  id          String  @id @default(cuid())
+  playerId    String
+  eventKey    String
+  week        Int
+  team        String?
+  positionKey String?
+  slotIndex   Int?
+  isSubstitute Boolean @default(false)
+  // Nur für Ersatz-Slots: wen ersetzt dieser Spieler (Raus↔Rein aus dem
+  // Original-Sheet). Optional, die Aufstellung funktioniert auch ohne.
+  replacesPlayerId String?
+
+  player   Player  @relation("AssignedPlayer", fields: [playerId], references: [id], onDelete: Cascade)
+  replaces Player? @relation("ReplacedPlayer", fields: [replacesPlayerId], references: [id], onDelete: SetNull)
+
+  // Ein Spieler steht pro Event und Woche nur einmal im Kader.
+  @@unique([playerId, eventKey, week])
+  // Ein Slot ist pro Event, Woche und Team nur einmal besetzt.
+  @@unique([eventKey, week, team, positionKey, slotIndex])
+  @@index([eventKey, week])
+}
+
+// status: "GESPIELT" | "BANK" | "FEHLT_ANGEMELDET" | "NICHT_DABEI" | "AUSGESETZT"
+model RotationHistory {
+  id       String @id @default(cuid())
+  playerId String
+  eventKey String
+  week     Int
+  status   String
+
+  player Player @relation(fields: [playerId], references: [id], onDelete: Cascade)
+
+  @@unique([playerId, eventKey, week])
+  @@index([eventKey, week])
+}
+
+model BanRecord {
+  id           String  @id @default(cuid())
+  playerId     String
+  eventKey     String
+  bannedInWeek Int
+  expiresWeek  Int
+  reason       String
+  active       Boolean @default(true)
+  createdAt    DateTime @default(now())
+
+  player Player @relation(fields: [playerId], references: [id], onDelete: Cascade)
+
+  @@index([eventKey, active])
+}
+
+/// Gemeldete Abwesenheit: Urlaub, Prüfungen, was auch immer.
+///
+/// Reines Melderegister. Es hindert niemanden am Mitspielen – wer sich für
+/// Wüstensturm oder Schluchtsturm anmeldet, wird ganz normal eingeteilt. Der
+/// Zweck ist die Frage "ist der seit gestern still, weil etwas nicht stimmt,
+/// oder weil er es angekündigt hat".
+model Absence {
+  id        String    @id @default(cuid())
+  playerId  String
+  /// Erster Tag der Abwesenheit, auf Mitternacht UTC normalisiert.
+  from      DateTime
+  /// Letzter Tag; leer heisst "bis auf Weiteres".
+  until     DateTime?
+  note      String?
+  createdAt DateTime  @default(now())
+  /// Wer sie eingetragen hat – denormalisiert, damit der Eintrag Konten überlebt.
+  createdBy String?
+
+  player Player @relation(fields: [playerId], references: [id], onDelete: Cascade)
+
+  @@index([playerId])
+  @@index([from])
+}
+
+// ── MODUL ZUG ───────────────────────────────────────────────
+
+model ZugPlayer {
+  playerId     String  @id
+  isR4Rotation Boolean @default(false)
+
+  player Player @relation(fields: [playerId], references: [id], onDelete: Cascade)
+}
+
+model R4RotationQueue {
+  id       String @id @default(cuid())
+  playerId String @unique
+  position Int
+
+  player Player @relation(fields: [playerId], references: [id], onDelete: Cascade)
+
+  @@index([position])
+}
+
+model ZugKW {
+  id String @id @default(cuid())
+  // Ohne Jahr würden sich die Wochen am Jahreswechsel überlagern: KW 1 gibt
+  // es in jedem Jahr.
+  year Int
+  kw   Int
+
+  days ZugDay[]
+
+  @@unique([year, kw])
+  @@index([year, kw])
+}
+
+// Genau 7 Zeilen pro ZugKW (Mo–So).
+model ZugDay {
+  id              String @id @default(cuid())
+  zugKWId         String
+  weekday         String // "Mo".."So"
+  dayIndex        Int    // 0..6, für stabile Sortierung
+  plannedDriverId String?
+  actualDriverId  String?
+  vipPlayerId     String?
+
+  kw            ZugKW   @relation(fields: [zugKWId], references: [id], onDelete: Cascade)
+  plannedDriver Player? @relation("PlannedDriver", fields: [plannedDriverId], references: [id], onDelete: SetNull)
+  actualDriver  Player? @relation("ActualDriver", fields: [actualDriverId], references: [id], onDelete: SetNull)
+  vipPlayer     Player? @relation("VipPlayer", fields: [vipPlayerId], references: [id], onDelete: SetNull)
+
+  @@unique([zugKWId, dayIndex])
+}
+
+// ── VS-AUSWERTUNG ───────────────────────────────────────────
+
+/// Eine abgeschlossene VS-Woche, wie sie aus der Arbeitsmappe kommt.
+///
+/// Die Woche wird aus dem Zeitraum im Blattkopf berechnet, nicht aus der
+/// Blattbeschriftung: in der Vorlage stand über dem 22.06.2026 "KW 25",
+/// tatsächlich ist das KW 26. Alle Blätter waren um dieselbe eine Woche
+/// versetzt. Das Datum lügt nicht, die Beschriftung schon – deshalb ist sie
+/// hier nirgends gespeichert.
+model VsWeek {
+  id   String @id @default(cuid())
+  year Int
+  kw   Int
+  /// Montag des Zeitraums, so wie er im Blattkopf stand.
+  starts     DateTime
+  importedAt DateTime @default(now())
+
+  scores VsScore[]
+
+  @@unique([year, kw])
+  @@index([year, kw])
+}
+
+/// Punktzahl eines Spielers in einer Woche.
+///
+/// Der Rohname bleibt erhalten, auch wenn die Zuordnung geklappt hat. Namen
+/// ändern sich im Spiel ständig; ohne den Originaltext liesse sich später
+/// nicht mehr nachvollziehen, wer da eigentlich stand.
+model VsScore {
+  id      String @id @default(cuid())
+  weekId  String
+  rawName String
+  /// Zugeordneter Kadereintrag. Bleibt leer, wenn der Name zu niemandem
+  /// passt – die Zeile geht dadurch nicht verloren, sie wird nur gemeldet.
+  playerId String?
+  points   Float
+
+  week   VsWeek  @relation(fields: [weekId], references: [id], onDelete: Cascade)
+  player Player? @relation(fields: [playerId], references: [id], onDelete: SetNull)
+
+  @@unique([weekId, rawName])
+  @@index([playerId])
+}
+
+/// Ein Zeitraum, in dem ein Spieler im Spiel auf R2 zurückgestuft war.
+///
+/// Wer das Schild vergisst, wird zurückgestuft und darf an Wüstensturm und
+/// Schluchtsturm nicht teilnehmen. Bewusst als Zeitraum und nicht als Schalter
+/// am Spieler: so lässt sich später nachsehen, wen es wann getroffen hat und
+/// wie oft. Ein offener Eintrag (`until` leer) heisst "ist es gerade".
+///
+/// Der Rang gilt im Spiel für beide Events, deshalb hängt der Eintrag am
+/// Spieler und nicht am Event. Gesperrt wird nichts: die Anmeldung bleibt
+/// möglich, damit beim Gegenprüfen sichtbar bleibt, wer sich gemeldet hat.
+model R2Record {
+  id       String    @id @default(cuid())
+  playerId String
+  since    DateTime  @default(now())
+  until    DateTime?
+  /// Namen statt Verweisen: der Eintrag soll lesbar bleiben, auch wenn das
+  /// Konto später gelöscht wird.
+  markedBy String?
+  liftedBy String?
+
+  player Player @relation(fields: [playerId], references: [id], onDelete: Cascade)
+
+  @@index([playerId])
+  @@index([until])
+  @@index([since])
+}
+
+/// Eine Allianz, mit der ein Bündnis besteht.
+///
+/// Was in einem Bündnis erlaubt ist, wird pro Partner ausgehandelt und ist
+/// nicht immer dasselbe: mal darf man den Zug plündern, mal die Basis
+/// angreifen, mal beides, mal nichts davon. Deshalb zwei getrennte Schalter
+/// und keine Stufe – eine Rangfolge gäbe es nicht.
+///
+/// Steht auf der Übersicht und damit für jedes angemeldete Konto sichtbar:
+/// wer im Feld steht, muss wissen, wen er angreifen darf. Gepflegt wird sie
+/// vom R4-Rang.
+model Pact {
+  id  String @id @default(cuid())
+  /// Server, auf dem die Allianz steht. Pflicht, weil Allianzkürzel nicht
+  /// serverübergreifend eindeutig sind – ohne die Nummer wäre bei gleichem
+  /// Kürzel nicht klar, welche Allianz gemeint ist. Die Liste ist danach
+  /// sortiert.
+  serverId Int
+  /// Kürzel wie im Spiel, ohne Klammern – "CoVs".
+  tag  String @unique
+  /// Ausgeschriebener Name, falls bekannt.
+  name String?
+  /// Darf deren Zug geplündert werden?
+  zugLoot  Boolean @default(false)
+  /// Dürfen deren Basen angegriffen werden?
+  baseHits Boolean @default(false)
+  /// Platz für Abmachungen, die sich nicht in zwei Schaltern ausdrücken lassen.
+  note String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tag])
+}
+
+/// Ein unerwarteter Fehler – ein Programmfehler, keine Fachregel.
+///
+/// Erwartbares (fehlende Rechte, ungültige Eingaben, verletzte Regeln) landet
+/// hier bewusst **nicht**: das ist kein Fehler, sondern eine Antwort, und der
+/// Benutzer hat sie schon gelesen. Was hier steht, hat niemand vorgesehen.
+///
+/// Bisher stand so etwas nur im Server-Protokoll, das niemand liest. Ein
+/// Superadmin soll es auf der Übersicht sehen, ohne sich auf den Server zu
+/// verbinden.
+model ErrorLog {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  /// Woher der Fehler kam – Modul, Aktion oder Skript.
+  source  String?
+  /// Die Meldung selbst, gekürzt auf lesbare Länge.
+  message String
+  /// Technische Einzelheiten für die Suche danach.
+  detail  String?
+  /// Wer es ausgelöst hat, denormalisiert wie im Aktivitätsprotokoll.
+  userName String?
+  /// Abgehakt – bleibt erhalten, verschwindet aber aus der Meldung.
+  seenAt   DateTime?
+  seenBy   String?
+
+  @@index([createdAt])
+  @@index([seenAt])
+}
+
+/// Freie Einstellungen als Schlüssel-Wert-Paar – aktuell die Textbausteine
+/// rund um die Zug-Ankündigung (Anrede, Einleitung, Grussformel).
+model AppSetting {
+  key   String @id
+  value String
+}
+
+/// Tagesaktuelle THP-Rangliste des Kaders, gespiegelt von lastwarrank.com.
+/// Bewusst als eigene Tabelle statt als Live-Abfrage: die Seite bleibt schnell
+/// und funktioniert auch, wenn die Quelle gerade nicht erreichbar ist.
+/// Es wird immer nur der neueste Stand gehalten – alte Zeilen fallen weg.
+model ThpRankingEntry {
+  id         String  @id @default(cuid())
+  /// Rang innerhalb der Allianz, 1 = stärkster.
+  rank       Int     @unique
+  /// Rang auf dem Server – nur bekannt, solange jemand in den Top 200 steht.
+  serverRank Int?
+  playerId   String?
+  lwrId      Int?
+  name       String
+  country    String?
+  /// Kann fehlen: wer weder heute noch früher je einen Wert hatte, steht
+  /// trotzdem in der Liste – ganz unten und ohne Zahl.
+  thp        Float?
+  power      Float?
+  /// THP stammt aus dem zuletzt bekannten Wert, nicht aus dem heutigen Abruf.
+  stale      Boolean @default(false)
+
+  @@index([rank])
+}
+
+/// Frühere Namen eines Spielers.
+///
+/// Bisher standen Umbenennungen nur als Fliesstext im Aktivitätsprotokoll
+/// ("Daddy Hell → oIo Deez nutz"). Das lässt sich lesen, aber nicht abfragen –
+/// und das Protokoll wird irgendwann beschnitten. Hier steht es strukturiert
+/// und bleibt am Spieler hängen.
+model NameChange {
+  id        String   @id @default(cuid())
+  playerId  String
+  vorher    String
+  nachher   String
+  /// Woher die Änderung kam: "abgleich", "rangliste" oder der Name des R4,
+  /// der von Hand umbenannt hat.
+  quelle    String
+  createdAt DateTime @default(now())
+
+  player Player @relation(fields: [playerId], references: [id], onDelete: Cascade)
+
+  @@index([playerId])
+  @@index([createdAt])
+}

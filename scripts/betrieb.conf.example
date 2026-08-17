@@ -1,0 +1,32 @@
+# Wo diese Installation läuft.
+#
+# Kopieren nach `scripts/betrieb.conf` und ausfüllen. Nötig ist das nur für
+# den Betrieb mit getrenntem Test- und Live-System und für die ausgelagerte
+# Sicherung – die Anwendung selbst läuft ohne diese Datei.
+#
+# `scripts/betrieb.conf` steht in `.gitignore`: die Pfade und Prozessnamen
+# gehören zu deinem Server, nicht ins Repository.
+
+# ── Test- und Live-System ────────────────────────────────────────────────
+# Zwei getrennte Installationen mit eigenen Datenbanken. Wer nur eine
+# betreibt, braucht promote-to-live.sh und sync-from-live.sh nicht.
+LIVE=/home/alliance-command
+DEV=/home/alliance-dev
+
+# Namen der pm2-Prozesse.
+PM2_LIVE=alliance-command
+PM2_DEV=alliance-dev
+
+# Adresse, an der nach der Übernahme geprüft wird, ob die Seite antwortet.
+LIVE_URL=https://example.com
+
+# ── Ausgelagerte Sicherung ───────────────────────────────────────────────
+# Privates GitHub-Repository, in das die verschlüsselte Sicherung geschoben
+# wird. Vorher von Hand einmal dorthin klonen.
+SICHERUNG_KLON=/root/sicherungen
+# Datei mit dem Kennwort für die Verschlüsselung, Rechte 0600.
+# Eine Kopie davon gehört ausserhalb des Servers aufbewahrt – ohne das
+# Kennwort ist die Sicherung wertlos.
+SICHERUNG_KENNWORT=/root/.sicherung-kennwort
+# Namensanfang der Sicherungsdateien.
+SICHERUNG_PRAEFIX=sicherung

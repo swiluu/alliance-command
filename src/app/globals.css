@@ -1,0 +1,113 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color-scheme: dark;
+  }
+
+  html,
+  body {
+    @apply bg-ground text-ink font-body antialiased;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    @apply font-display tracking-wide;
+  }
+
+  /* Sichtbarer Fokus – gilt für Tastatur- wie Touch-Bedienung */
+  :focus-visible {
+    outline: 2px solid theme("colors.sand");
+    outline-offset: 2px;
+    border-radius: 3px;
+  }
+
+  ::selection {
+    background: theme("colors.sand");
+    color: #0b0f0d;
+  }
+}
+
+@layer components {
+  .panel {
+    @apply bg-panel border border-line rounded-md shadow-panel;
+  }
+
+  .panel-head {
+    @apply px-4 py-3 border-b border-line flex items-center justify-between gap-3;
+  }
+
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 px-3 py-2 rounded border border-line
+           bg-panel-2 text-ink text-sm font-medium transition-colors
+           hover:border-sand-dim hover:text-sand disabled:opacity-40
+           disabled:cursor-not-allowed disabled:hover:border-line disabled:hover:text-ink;
+  }
+
+  .btn-primary {
+    @apply border-sand-dim bg-sand/15 text-sand hover:bg-sand/25 hover:text-sand;
+  }
+
+  .btn-danger {
+    @apply border-danger-dim bg-danger/15 text-danger hover:bg-danger/25;
+  }
+
+  .input {
+    @apply w-full bg-ground border border-line rounded px-3 py-2 text-sm text-ink
+           placeholder:text-muted focus:border-sand-dim;
+  }
+
+  /*
+   * Auswahllisten brauchen eigene Farben: <option> erbt sie nicht vom <select>.
+   * Ohne das zeichnen die meisten Browser die Liste mit ihrem hellen
+   * System-Standard – auf dem dunklen Hintergrund praktisch unlesbar.
+   * `color-scheme` sorgt zusätzlich dafür, dass die native Liste dunkel kommt.
+   */
+  select.input {
+    color-scheme: dark;
+    @apply text-ink;
+  }
+
+  select.input option,
+  select.input optgroup {
+    @apply bg-panel text-ink;
+  }
+
+  .tag {
+    @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px]
+           font-mono border border-line bg-panel-2 text-muted whitespace-nowrap;
+  }
+
+  .stat {
+    @apply panel px-4 py-3;
+  }
+
+  .stat-value {
+    @apply font-display text-3xl leading-none;
+  }
+
+  .stat-label {
+    @apply text-[11px] uppercase tracking-[0.14em] text-muted mt-1;
+  }
+
+  /* Breite Inhalte scrollen in ihrem eigenen Container, nie die Seite. */
+  .scroll-x {
+    @apply overflow-x-auto;
+    scrollbar-width: thin;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}

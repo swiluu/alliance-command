@@ -1,0 +1,25 @@
+node_modules/
+.next/
+out/
+build/
+.env
+.env.local
+
+# Pfade und Prozessnamen dieses Servers
+scripts/betrieb.conf
+*.log
+.DS_Store
+next-env.d.ts
+
+# SQLite-Datenbank – nie einchecken
+prisma/dev.db
+prisma/dev.db-journal
+prisma/*.db
+prisma/*.db-journal
+prisma/dev.db.backup-*
+
+# Datenbank-Sicherungen – gehören nicht ins Repository
+backups/
+
+# Build-Zwischenstand
+tsconfig.tsbuildinfo

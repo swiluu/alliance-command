@@ -31,12 +31,33 @@ hinweis(){ printf '    %s%s%s\n' "$grau" "$1" "$aus"; }
 # ── Voraussetzungen ────────────────────────────────────────────────────────
 titel "Voraussetzungen"
 
-command -v node >/dev/null || fehler "Node.js fehlt. Nötig ist Version 18 oder neuer."
+# Wer hier scheitert, sitzt meist vor einem frisch aufgesetzten Server. Dann
+# hilft die Fehlermeldung allein nicht weiter – der Weg zu einem brauchbaren
+# Node gehört gleich dazu.
+node_anleitung() {
+  local sudo=""
+  [ "$(id -u)" -ne 0 ] && sudo="sudo "
+  hinweis "Auf Ubuntu oder Debian:"
+  hinweis "  ${sudo}apt-get update && ${sudo}apt-get install -y curl"
+  hinweis "  curl -fsSL https://deb.nodesource.com/setup_22.x | ${sudo}bash -"
+  hinweis "  ${sudo}apt-get install -y nodejs"
+  hinweis "Danach dieses Skript erneut aufrufen."
+}
+
+if ! command -v node >/dev/null; then
+  printf '  %s✗%s %s\n' "$rot" "$aus" "Node.js fehlt. Nötig ist Version 18 oder neuer."
+  node_anleitung
+  exit 1
+fi
 NODE_MAJOR=$(node -p "process.versions.node.split('.')[0]")
-[ "$NODE_MAJOR" -ge 18 ] || fehler "Node.js $NODE_MAJOR ist zu alt – nötig ist 18 oder neuer."
+if [ "$NODE_MAJOR" -lt 18 ]; then
+  printf '  %s✗%s %s\n' "$rot" "$aus" "Node.js $NODE_MAJOR ist zu alt – nötig ist 18 oder neuer."
+  node_anleitung
+  exit 1
+fi
 ok "Node.js $(node -v)"
 
-command -v npm >/dev/null || fehler "npm fehlt."
+command -v npm >/dev/null || fehler "npm fehlt – gehört zum nodejs-Paket, siehe README."
 ok "npm $(npm -v)"
 
 if command -v openssl >/dev/null; then

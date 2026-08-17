@@ -34,6 +34,28 @@ bcrypt, damit das Self-Hosting ohne native Build-Tools auskommt.
 
 ## Setup
 
+### Voraussetzung: Node.js 18 oder neuer
+
+Ubuntu und Debian bringen ein zu altes Node mit, teils gar keines. Über
+NodeSource kommt eine aktuelle LTS-Fassung auf den Rechner:
+
+```bash
+apt-get update && apt-get install -y curl
+curl -fsSL https://deb.nodesource.com/setup_22.x | bash -
+apt-get install -y nodejs
+```
+
+Als normaler Benutzer jeweils `sudo` davorsetzen. Prüfen mit `node -v` – die
+Zahl muss mit 18 oder höher beginnen. `npm` kommt mit, ein eigenes Paket
+dafür braucht es nicht (`apt-get install npm` zöge sogar ein zweites, altes
+Node nach).
+
+22 ist die aktuelle LTS-Fassung; 20 ist seit April 2026 am Lebensende.
+Wer `nvm` benutzt: `nvm install 22` genügt, dann aber daran denken, dass
+Cron und pm2 die Node-Version aus `nvm` nicht von selbst finden.
+
+### Einrichten
+
 ```bash
 git clone https://github.com/swiluu/alliance-command.git
 cd alliance-command

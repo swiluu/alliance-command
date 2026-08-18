@@ -19,7 +19,7 @@ import { asciiKey, formatThp, looseKey, type LwrRow } from "@/server/thp";
 
 const ALLIANCE = ALLIANZ_TAG;
 const ALLIANZ_ID = LWR_ALLIANCE_ID;
-const LWR_BASIS = process.env.LWR_BASE_URL ?? "http://localhost:3777";
+const LWR_BASIS = process.env.LWR_BASE_URL ?? "https://lastwarrank.com";
 
 /**
  * Wer die Allianz verlassen hat, steht in der Mitgliederliste noch eine Weile

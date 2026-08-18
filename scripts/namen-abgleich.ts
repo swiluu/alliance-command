@@ -36,7 +36,7 @@ import { merkeLauf, schreibeStoerung } from "@/lib/stoerung";
 
 const prisma = new PrismaClient();
 
-const BASIS = process.env.LWR_BASE_URL ?? "http://localhost:3777";
+const BASIS = process.env.LWR_BASE_URL ?? "https://lastwarrank.com";
 /** Kennung der eigenen Allianz bei der Quelle. */
 const ALLIANZ = process.env.LWR_ALLIANCE_ID ?? "045c559760b245c9adc74db53510af09";
 const NUR_PROBE = process.argv.includes("--probe");

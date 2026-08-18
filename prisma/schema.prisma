@@ -187,8 +187,8 @@ model Player {
 /// Schreibweise aus einer fremden Quelle, die sich nicht von selbst auf einen
 /// Kadereintrag zurückführen lässt. Die Normalisierung (siehe src/lib/vs.ts)
 /// fängt Zierzeichen und Sonderbuchstaben ab – "Alphabull ツ" findet sich
-/// darüber. Was übrig bleibt, sind echte Abweichungen wie "Mane994" gegen
-/// "Mane 武"; die stehen hier und gelten dann dauerhaft.
+/// darüber. Was übrig bleibt, sind echte Abweichungen wie "Ranger994" gegen
+/// "Ranger 武"; die stehen hier und gelten dann dauerhaft.
 model PlayerAlias {
   id String @id @default(cuid())
   /// Normalisierter Fremdname, kleingeschrieben und ohne Zierzeichen.

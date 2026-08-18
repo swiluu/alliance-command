@@ -87,13 +87,13 @@ export function ThpPanel({
           <div className="panel my-auto w-full max-w-lg p-5">
             <h2 className="text-lg mb-1">{t("importHeading")}</h2>
             <p className="text-sm text-muted mb-3">
-              {t("importHint")} <code className="font-mono">Enderメ;202.59M</code>
+              {t("importHint")} <code className="font-mono">Novaメ;202.59M</code>
             </p>
             <textarea
               className="input font-mono text-xs h-48"
               value={text}
               onChange={(e) => setText(e.target.value)}
-              placeholder={"Enderメ;202.59M\nTom1388;201.83M"}
+              placeholder={"Novaメ;202.59M\nScout1388;201.83M"}
             />
             <div className="mt-4 flex justify-end gap-2">
               <button type="button" className="btn" onClick={() => setOpen(false)}>

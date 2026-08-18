@@ -22,9 +22,12 @@ const prisma = new PrismaClient();
 
 const args = process.argv.slice(2);
 const DRY_RUN = args.includes("--dry-run");
-const SERVER_ID = process.env.THP_SERVER_ID ?? "1580";
-const API =
-  process.env.THP_API_URL ?? "http://localhost:3777/api/rankings/players";
+const SERVER_ID = process.env.THP_SERVER_ID || process.env.NEXT_PUBLIC_SERVER_ID || "";
+// Ohne eigene Angabe die Schnittstelle der eingerichteten Instanz. Vorher
+// stand hier ein localhost-Dienst – auf einem anderen Rechner lauscht dort
+// nichts, und der Aufruf endete im nackten "fetch failed".
+const BASIS = process.env.LWR_BASE_URL || "https://lastwarrank.com";
+const API = process.env.THP_API_URL || `${BASIS}/api/rankings/players`;
 
 /**
  * Namen, die sich algorithmisch nicht zuordnen lassen – links wie der Spieler
@@ -33,15 +36,7 @@ const API =
  * Eintrag hier wird dann nicht mehr gebraucht.
  */
 const ALIASES: Record<string, string> = {
-  "Ender x": "Enderメ",
-  Mane994: "Mane 武",
-  Vinz: "Vιɳz 爻",
-  "0 Willhelm Klink": "O Wilhelm Klink",
-  "NoMercy Bloodfey": "NoMɛrcyღBloodfɛy",
-  NERO: "NER0o",
-  Susi: "Susl 爻",
-  "Mira ヅ": "ᴹⁱʳᵃツ",
-  MEYMoshpitHEM: "MΞYMoshpitHΞM",
+  // Beispiel: "Nova x": "Novaメ",
 };
 
 type LwrRow = {

@@ -10,7 +10,7 @@ import { vsNameKey } from "@/lib/vs";
  *  1. die normalisierte Schreibweise des Kadernamens – deckt Zierzeichen,
  *     gesperrte Schreibweise und Akzente ab und braucht keine Pflege;
  *  2. die Aliastabelle – für alles, was sich damit nicht fassen lässt, etwa
- *     "Mane994" gegen "Mane 武".
+ *     "Ranger994" gegen "Ranger 武".
  *
  * Ausgetretene Spieler bleiben drin. Ihre Punkte aus vergangenen Wochen
  * gehören zur Historie; sie später nicht mehr zuordnen zu können, wäre ein

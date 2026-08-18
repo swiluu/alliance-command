@@ -16,7 +16,7 @@ import "server-only";
  * dieser Stelle einfach nichts.
  */
 
-const BASIS = process.env.LWR_BASE_URL ?? "http://localhost:3777";
+const BASIS = process.env.LWR_BASE_URL ?? "https://lastwarrank.com";
 /** Kurz gehalten: das Profil soll nicht auf eine hängende Quelle warten. */
 const ZEITLIMIT_MS = 4000;
 /** Die Quelle veröffentlicht täglich – öfter zu fragen bringt nichts. */

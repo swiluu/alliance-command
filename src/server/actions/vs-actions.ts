@@ -46,8 +46,8 @@ export async function uploadVsWorkbook(formData: FormData) {
 /**
  * Verbindet eine Schreibweise aus der Datei dauerhaft mit einem Kadereintrag.
  *
- * Gedacht für die Fälle, die keine Normalisierung fängt – "Mane994" gegen
- * "Mane 武". Bereits eingelesene Zeilen mit demselben Namen werden gleich
+ * Gedacht für die Fälle, die keine Normalisierung fängt – "Ranger994" gegen
+ * "Ranger 武". Bereits eingelesene Zeilen mit demselben Namen werden gleich
  * mitgezogen, sonst müsste man die Mappe nur wegen eines Namens neu einlesen.
  */
 export async function linkVsName(rawName: string, playerId: string) {

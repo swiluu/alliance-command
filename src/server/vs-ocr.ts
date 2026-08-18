@@ -12,8 +12,8 @@ import { vsNameKey } from "@/lib/vs";
  * fragen und die erkannten Namen dem Kader zuordnen.
  *
  * Die Zuordnung nutzt denselben Schlüssel wie der Excel-Import. Das ist
- * wichtig, weil die Erkennung Sonderzeichen verschluckt: aus „Enderメ“ wird
- * „Ender“, aus „Mane 武“ wird „Mane“. Der Schlüssel wirft genau solche
+ * wichtig, weil die Erkennung Sonderzeichen verschluckt: aus „Novaメ“ wird
+ * „Ender“, aus „Ranger 武“ wird „Mane“. Der Schlüssel wirft genau solche
  * Zierzeichen ohnehin weg, deshalb treffen diese Fälle trotzdem.
  *
  * Was hier nicht passiert: speichern. Das Ergebnis ist ein Vorschlag, den ein

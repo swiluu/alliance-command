@@ -12,7 +12,7 @@ import "server-only";
  * und sagt das offen – sie ist Beiwerk, kein Betriebsmittel.
  */
 
-const BASIS = process.env.LWR_BASE_URL ?? "http://localhost:3777";
+const BASIS = process.env.LWR_BASE_URL ?? "https://lastwarrank.com";
 const ZEITLIMIT_MS = 8000;
 /** Die Quelle wird täglich aufgefrischt; öfter zu fragen bringt nichts. */
 const FRISCHE_S = 3600;

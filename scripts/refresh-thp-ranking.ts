@@ -23,9 +23,12 @@ import { merkeLauf, schreibeStoerung } from "@/lib/stoerung";
 
 const prisma = new PrismaClient();
 
-const SERVER_ID = process.env.THP_SERVER_ID ?? "1580";
-const API =
-  process.env.THP_API_URL ?? "http://localhost:3777/api/rankings/players";
+const SERVER_ID = process.env.THP_SERVER_ID || process.env.NEXT_PUBLIC_SERVER_ID || "";
+// Ohne eigene Angabe die Schnittstelle der eingerichteten Instanz. Vorher
+// stand hier ein localhost-Dienst – auf einem anderen Rechner lauscht dort
+// nichts, und der Aufruf endete im nackten "fetch failed".
+const BASIS = process.env.LWR_BASE_URL || "https://lastwarrank.com";
+const API = process.env.THP_API_URL || `${BASIS}/api/rankings/players`;
 
 export const RANKING_KEYS = {
   fetchedAt: "thp.rangliste.abgerufen",
@@ -47,11 +50,21 @@ async function fetchRanking(): Promise<LwrRow[]> {
   const rows: LwrRow[] = [];
   for (let offset = 0; offset < 1000; offset += 100) {
     const url = `${API}?server_id=${SERVER_ID}&sort_by=thp&sort_dir=desc&limit=100&offset=${offset}`;
-    const res = await fetch(url, {
-      headers: { accept: "application/json" },
-      signal: AbortSignal.timeout(15000),
-    });
-    if (!res.ok) throw new Error(`lastwarrank antwortete mit ${res.status}`);
+    let res: Response;
+    try {
+      res = await fetch(url, {
+        headers: { accept: "application/json" },
+        signal: AbortSignal.timeout(15000),
+      });
+    } catch (e) {
+      // "fetch failed" allein sagt niemandem, wo es klemmt. Die Adresse
+      // dazuschreiben und den Weg zur Einstellung nennen.
+      throw new Error(
+        `${API} nicht erreichbar (${e instanceof Error ? e.message : String(e)}). ` +
+          `Adresse in der .env prüfen: LWR_BASE_URL bzw. THP_API_URL.`,
+      );
+    }
+    if (!res.ok) throw new Error(`${API} antwortete mit ${res.status}`);
 
     const batch = ((await res.json()) as { rows?: LwrRow[] }).rows ?? [];
     rows.push(...batch);

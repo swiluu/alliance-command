@@ -1105,6 +1105,7 @@
     "nurLesen": "You can view the plan but not change it.",
     "liveOn": "syncing",
     "liveUpdated": "updated",
-    "liveTitle": "Changes by others appear on their own"
+    "liveTitle": "Changes by others appear on their own",
+    "ganzeKarte": "Fit map"
   }
 }

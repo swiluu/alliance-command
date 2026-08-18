@@ -108,23 +108,104 @@ export function SeasonKarte({
     };
   }, [seasonKey, router]);
 
+  // ── Zoom und Verschieben ────────────────────────────────────────────────
+  // Über den viewBox und nicht über CSS-Transform: das SVG wird dadurch neu
+  // gezeichnet statt vergrössert, bleibt also in jeder Stufe scharf.
+  const voll = useMemo(
+    () => ({ x: 0, y: 0, b: ausdehnung.breite, h: ausdehnung.hoehe }),
+    [ausdehnung],
+  );
+  const [sicht, setSicht] = useState(voll);
+  useEffect(() => setSicht(voll), [voll]);
+
+  const svgRef = useRef<SVGSVGElement | null>(null);
+  const zieht = useRef<{ x: number; y: number; sicht: typeof voll } | null>(null);
+  // Merkt, ob die Maus zwischen Drücken und Loslassen gewandert ist. Ohne das
+  // würde jedes Verschieben am Ende ein Feld auswählen.
+  const gewandert = useRef(false);
+
+  /** Nicht weiter hinein als vier Felder, nicht weiter hinaus als die Karte. */
+  const grenzen = (b: number) => Math.min(voll.b, Math.max(einheit * 4, b));
+
+  const zoome = (faktor: number, relX = 0.5, relY = 0.5) => {
+    setSicht((a) => {
+      const b = grenzen(a.b * faktor);
+      const h = (b / a.b) * a.h;
+      // Der Punkt unter dem Zeiger soll dort bleiben, wo er ist.
+      const x = a.x + (a.b - b) * relX;
+      const y = a.y + (a.h - h) * relY;
+      return {
+        b,
+        h,
+        x: Math.min(Math.max(x, voll.x - b * 0.2), voll.b - b * 0.8),
+        y: Math.min(Math.max(y, voll.y - h * 0.2), voll.h - h * 0.8),
+      };
+    });
+  };
+
+  // Als eigener Zuhörer, weil React das Rad passiv anmeldet – dort liesse sich
+  // das Scrollen der Seite nicht unterdrücken.
+  useEffect(() => {
+    const el = svgRef.current;
+    if (!el) return;
+    const beiRad = (e: WheelEvent) => {
+      e.preventDefault();
+      const r = el.getBoundingClientRect();
+      zoome(e.deltaY < 0 ? 1 / 1.2 : 1.2, (e.clientX - r.left) / r.width, (e.clientY - r.top) / r.height);
+    };
+    el.addEventListener("wheel", beiRad, { passive: false });
+    return () => el.removeEventListener("wheel", beiRad);
+  });
+
   const aktiv = gewaehlt ? gebiete.find((g) => g.id === gewaehlt) ?? null : null;
   const aktivZ = gewaehlt ? proGebiet.get(gewaehlt) ?? null : null;
 
   return (
     <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
       {/*
-        Die Karte ist quadratisch und würde die volle Breite bis über tausend
-        Pixel hoch werden lassen – man müsste scrollen, um sie ganz zu sehen.
-        Deshalb auf Fensterhöhe begrenzt und mittig gesetzt; das SVG bringt
-        sein Seitenverhältnis selbst mit.
+        Fester Rahmen statt mitwachsender Karte: Season 3 hat 313 Gebiete,
+        Season 4 nur 187 – bei fester Zeichenfläche wäre die eine zu gross und
+        die andere zu klein. Der Rahmen bleibt, die Karte wird darin gezoomt.
       */}
-      <div className="card flex justify-center overflow-auto p-2">
+      <div className="card relative p-2">
+        <div className="absolute right-3 top-3 z-10 flex gap-1">
+          <button type="button" className="btn px-2 py-0.5" onClick={() => zoome(1 / 1.4)} title="+">
+            +
+          </button>
+          <button type="button" className="btn px-2 py-0.5" onClick={() => zoome(1.4)} title="−">
+            −
+          </button>
+          <button type="button" className="btn px-2 py-0.5" onClick={() => setSicht(voll)}>
+            {t("ganzeKarte")}
+          </button>
+        </div>
         <svg
-          viewBox={"0 0 " + ausdehnung.breite + " " + ausdehnung.hoehe}
-          className="h-auto max-h-[60vh] w-full max-w-full"
+          ref={svgRef}
+          viewBox={sicht.x + " " + sicht.y + " " + sicht.b + " " + sicht.h}
+          className="h-[70vh] w-full touch-none select-none"
           role="img"
           aria-label={t("heading")}
+          style={{ cursor: zieht.current ? "grabbing" : "grab" }}
+          onPointerDown={(e) => {
+            (e.target as Element).setPointerCapture?.(e.pointerId);
+            gewandert.current = false;
+            zieht.current = { x: e.clientX, y: e.clientY, sicht };
+          }}
+          onPointerMove={(e) => {
+            const z = zieht.current;
+            if (!z || !svgRef.current) return;
+            const r = svgRef.current.getBoundingClientRect();
+            const dx = ((e.clientX - z.x) / r.width) * z.sicht.b;
+            const dy = ((e.clientY - z.y) / r.height) * z.sicht.h;
+            if (Math.abs(e.clientX - z.x) + Math.abs(e.clientY - z.y) > 4) gewandert.current = true;
+            setSicht({ ...z.sicht, x: z.sicht.x - dx, y: z.sicht.y - dy });
+          }}
+          onPointerUp={() => {
+            zieht.current = null;
+          }}
+          onPointerLeave={() => {
+            zieht.current = null;
+          }}
         >
           {gebiete.map((g) => {
             const z = proGebiet.get(g.id);
@@ -139,7 +220,10 @@ export function SeasonKarte({
               stroke: gewaehltJetzt ? "#f0e6d8" : "#1b1713",
               strokeWidth: strich,
               className: darfBearbeiten ? "cursor-pointer" : undefined,
-              onClick: () => setGewaehlt(gewaehltJetzt ? null : g.id),
+              onClick: () => {
+                if (gewandert.current) return;
+                setGewaehlt(gewaehltJetzt ? null : g.id);
+              },
             };
             const titel = (
               <title>

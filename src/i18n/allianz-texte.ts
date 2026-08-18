@@ -23,11 +23,6 @@ import { ALLIANZ_TAG, SERVER_ID } from "@/lib/allianz";
 const VORGABE_TAG = "ALLY";
 const VORGABE_SERVER = "0000";
 
-/** Für den Einbau in eine JSON-Zeichenkette entschärfen. */
-function fuerJson(wert: string): string {
-  return JSON.stringify(wert).slice(1, -1);
-}
-
 export function mitAllianz<T>(nachrichten: T): T {
   const tag = String(ALLIANZ_TAG);
   // Ohne Eintrag in der `.env` ist die Nummer 0. Dann bleibt der Platzhalter
@@ -36,11 +31,22 @@ export function mitAllianz<T>(nachrichten: T): T {
   const server = SERVER_ID > 0 ? String(SERVER_ID) : VORGABE_SERVER;
   if (tag === VORGABE_TAG && server === VORGABE_SERVER) return nachrichten;
 
-  const ersetzt = JSON.stringify(nachrichten)
-    .split(VORGABE_TAG)
-    .join(fuerJson(tag))
-    .split(VORGABE_SERVER)
-    .join(fuerJson(server));
+  // Nur Werte ersetzen, niemals Schlüssel. Das ist keine Feinheit: der
+  // Schlüssel `seite.ALLY` enthält den Platzhalter als Namen: eine Ersetzung
+  // über den ganzen Text machte daraus `seite.aRES`, und die Beschriftung
+  // verschwand aus der Oberfläche.
+  const ersetze = (wert: unknown): unknown => {
+    if (typeof wert === "string") {
+      return wert.split(VORGABE_TAG).join(tag).split(VORGABE_SERVER).join(server);
+    }
+    if (Array.isArray(wert)) return wert.map(ersetze);
+    if (wert && typeof wert === "object") {
+      return Object.fromEntries(
+        Object.entries(wert as Record<string, unknown>).map(([k, v]) => [k, ersetze(v)]),
+      );
+    }
+    return wert;
+  };
 
-  return JSON.parse(ersetzt) as T;
+  return ersetze(nachrichten) as T;
 }

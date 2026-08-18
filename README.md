@@ -127,8 +127,7 @@ Oberfläche `ALLY · Server #0000`; dann wurde das Einrichten übersprungen.
    `/passwort`. Damit kennt niemand ausser ihm das laufende Passwort. In der
    Zugriffsmatrix markiert ein rotes `Erstpasswort`, wer den Wechsel noch vor
    sich hat. Ein Zurücksetzen durch einen Superadmin setzt die Pflicht erneut.
-4. Optional die Altdaten importieren (siehe unten).
-5. In **Wüstensturm → Wochenplanung** die Aufstellung bauen und am Ende der
+4. In **Wüstensturm → Wochenplanung** die Aufstellung bauen und am Ende der
    Woche „Woche abschliessen“ auslösen.
 
 ### Wöchentlicher Ablauf

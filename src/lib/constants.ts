@@ -8,6 +8,7 @@ export const MODULES = [
   "vs",
   "r2",
   "allianz",
+  "season",
   "backup",
 ] as const;
 export type ModuleKey = (typeof MODULES)[number];
@@ -51,6 +52,9 @@ export const MODULE_META: Record<
   r2: { href: "/r2", icon: "🛡" },
   // Der Spieler-Stamm gehört keinem Event – wer ihn ändert, ändert alle Module.
   allianz: { href: "/allianz", icon: "👥" },
+  // Die Season-Karte gehört keinem Event: sie läuft quer über die ganze
+  // Season und wird von der Führung geplant, während die Wochen weiterlaufen.
+  season: { href: "/season", icon: "🗺" },
   // Sicherungen enthalten den kompletten Datenbestand inklusive Passwort-Hashes –
   // deshalb ein eigenes Modul mit eigener Zugriffsstufe.
   backup: { href: "/backup", icon: "🗄" },

@@ -20,7 +20,8 @@
     "backup": "Backups",
     "vs": "VS-Auswertung",
     "r2": "R2-Markierung",
-    "unknown": "dieses Modul"
+    "unknown": "dieses Modul",
+    "season": "Season-Karte"
   },
   "access": {
     "edit": "Bearbeiten",
@@ -1073,5 +1074,37 @@
     "explainVs": "Höchste Einzelwertung in KW {woche}",
     "explainPower": "Hero Power in vier Wochen: {vorher} → {nachher} (+{prozent} %)",
     "explainKills": "Abschüsse in vier Wochen: {vorher} → {nachher} (+{prozent} %)"
+  },
+  "season": {
+    "title": "Season-Karte · ALLY Command",
+    "heading": "Season-Karte",
+    "kicker": "Season {season}",
+    "intro": "Wer nimmt welches Gebiet. Die Karte kommt aus den Season-Daten, geplant wird darauf.",
+    "seasonWahl": "Season",
+    "unverplant": "unverplant",
+    "gebiete": "{n} Gebiete",
+    "seite": {
+      "OWN": "Wir",
+      "ALLY": "Verbündet",
+      "ENEMY": "Gegner"
+    },
+    "zuteilen": "Zuteilen",
+    "loeschen": "Zuteilung entfernen",
+    "raeumen": "Season räumen",
+    "raeumenFrage": "Alle Zuteilungen dieser Season entfernen?",
+    "tag": "Allianz-Kürzel",
+    "spieler": "Spieler",
+    "schritt": "Reihenfolge",
+    "notiz": "Notiz",
+    "keinSpieler": "niemand",
+    "stufe": "Stufe {n}",
+    "capitol": "Capitol",
+    "buff": "{item} +{prozent} %",
+    "bilanz": "Bilanz",
+    "keineZuteilung": "Noch nichts zugeteilt. Ein Feld anklicken.",
+    "nurLesen": "Du kannst die Planung ansehen, aber nicht ändern.",
+    "liveOn": "Abgleich läuft",
+    "liveUpdated": "aktualisiert",
+    "liveTitle": "Änderungen der anderen erscheinen von selbst"
   }
 }

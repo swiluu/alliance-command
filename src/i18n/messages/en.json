@@ -20,7 +20,8 @@
     "backup": "Backups",
     "vs": "VS evaluation",
     "r2": "R2 marking",
-    "unknown": "this module"
+    "unknown": "this module",
+    "season": "Season map"
   },
   "access": {
     "edit": "Can edit",
@@ -1073,5 +1074,37 @@
     "explainVs": "Highest single score in week {woche}",
     "explainPower": "Hero power over four weeks: {vorher} → {nachher} (+{prozent}%)",
     "explainKills": "Kills over four weeks: {vorher} → {nachher} (+{prozent}%)"
+  },
+  "season": {
+    "title": "Season map · ALLY Command",
+    "heading": "Season map",
+    "kicker": "Season {season}",
+    "intro": "Who takes which territory. The map comes from the season data; planning happens on top of it.",
+    "seasonWahl": "Season",
+    "unverplant": "unassigned",
+    "gebiete": "{n} territories",
+    "seite": {
+      "OWN": "Us",
+      "ALLY": "Allied",
+      "ENEMY": "Enemy"
+    },
+    "zuteilen": "Assign",
+    "loeschen": "Remove assignment",
+    "raeumen": "Clear season",
+    "raeumenFrage": "Remove every assignment of this season?",
+    "tag": "Alliance tag",
+    "spieler": "Player",
+    "schritt": "Order",
+    "notiz": "Note",
+    "keinSpieler": "nobody",
+    "stufe": "Level {n}",
+    "capitol": "Capitol",
+    "buff": "{item} +{prozent}%",
+    "bilanz": "Totals",
+    "keineZuteilung": "Nothing assigned yet. Click a tile.",
+    "nurLesen": "You can view the plan but not change it.",
+    "liveOn": "syncing",
+    "liveUpdated": "updated",
+    "liveTitle": "Changes by others appear on their own"
   }
 }

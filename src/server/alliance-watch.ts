@@ -60,8 +60,11 @@ export type AllianceChanges = {
 
 /** Wie beim Sync, aber gecacht und mit Zeitlimit – die Übersicht darf nicht hängen. */
 async function fetchRoster(): Promise<LwrRow[] | null> {
-  const base = process.env.THP_API_URL;
-  if (!base) return null;
+  // Ohne eigene Angabe die Schnittstelle der eingerichteten Instanz. Vorher
+  // stand hier ein blosses `return null`: fehlte THP_API_URL, blieb der
+  // Abgleich stumm und der Kasten erschien nie – ohne jeden Hinweis darauf,
+  // dass eine Einstellung fehlt.
+  const base = process.env.THP_API_URL || `${LWR_BASIS}/api/rankings/players`;
   const serverId = String(SERVER_ID);
 
   const rows: LwrRow[] = [];
@@ -112,7 +115,7 @@ export async function getAllianceChanges(): Promise<AllianceChanges> {
 
   // Neu in der Allianz: steht in der Liste, aber in keinem unserer Datensätze.
   const joined = rows
-    .filter((r) => r.alliance_abbr === ALLIANCE)
+    .filter((r) => (r.alliance_abbr ?? "").toLowerCase() === ALLIANCE.toLowerCase())
     .filter(
       (r) =>
         !knownIds.has(r.public_id) &&

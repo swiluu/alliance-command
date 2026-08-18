@@ -113,10 +113,16 @@ export function SeasonKarte({
 
   return (
     <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
-      <div className="card overflow-auto p-2">
+      {/*
+        Die Karte ist quadratisch und würde die volle Breite bis über tausend
+        Pixel hoch werden lassen – man müsste scrollen, um sie ganz zu sehen.
+        Deshalb auf Fensterhöhe begrenzt und mittig gesetzt; das SVG bringt
+        sein Seitenverhältnis selbst mit.
+      */}
+      <div className="card flex justify-center overflow-auto p-2">
         <svg
           viewBox={"0 0 " + ausdehnung.breite + " " + ausdehnung.hoehe}
-          className="h-auto w-full min-w-[520px]"
+          className="h-auto max-h-[60vh] w-full max-w-full"
           role="img"
           aria-label={t("heading")}
         >
@@ -140,9 +146,13 @@ export function SeasonKarte({
                 {g.name + " · " + t("stufe", { n: g.level }) + (z?.tag ? " · " + z.tag : "")}
               </title>
             );
-            // Beschriftung nur, wo Platz ist – sonst überlagert sie das Feld.
+            // Beschriftet wird nur, was geplant ist, plus das Capitol. Vorher
+            // stand auf jedem Feld seine Stufe – dreihundert Zahlen, die
+            // niemand liest und die die Karte grösser wirken lassen, als sie
+            // ist. Die Stufe steht weiterhin im Tooltip.
             const platz = Math.min(r.breite, r.hoehe);
-            const zeigeText = platz >= einheit * 2 || g.isCapitol || z?.schritt != null;
+            const beschriftung = z?.schritt ?? (g.isCapitol ? "★" : null);
+            const zeigeText = beschriftung !== null;
             return (
               <g key={g.id}>
                 {c.points ? (
@@ -164,7 +174,7 @@ export function SeasonKarte({
                     fill="#f7f2ea"
                     pointerEvents="none"
                   >
-                    {z?.schritt ?? g.level}
+                    {beschriftung}
                   </text>
                 )}
               </g>

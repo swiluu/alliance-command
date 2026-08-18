@@ -122,9 +122,38 @@ frage NEXT_PUBLIC_SERVER_ID    "Servernummer"                                 ""
 titel "Datenquelle lastwarrank"
 hinweis "Liefert Namen, THP, Wochenverlauf und den Allianzvergleich."
 hinweis "Ohne diese Angaben läuft alles weiter – die betroffenen Abschnitte bleiben leer."
-frage LWR_BASE_URL    "Adresse der lastwarrank-Instanz"                        "https://lastwarrank.com"
-frage LWR_ALLIANCE_ID "Allianz-Kennung (die lange Zeichenfolge aus der Adresse der Allianzseite)" ""
-frage THP_API_URL     "Adresse der Spieler-Rangliste (leer lassen, wenn unbekannt)" ""
+hinweis "Am einfachsten die Allianzseite im Browser öffnen und die Adresse einfügen:"
+hinweis "  https://lastwarrank.com/alliance/<Kennung>"
+# Bisheriger Stand als Vorschlag – und dabei gleich einen früher falsch
+# abgelegten Wert geraderücken: stand die volle Allianzseite im Serverfeld,
+# lief jeder Abruf ins Leere.
+ALT_BASIS="${ALT_LWR_BASE_URL:-}"
+[[ "$ALT_BASIS" =~ ^(https?://[^/]+) ]] && ALT_BASIS="${BASH_REMATCH[1]}"
+VORSCHLAG_LWR=""
+if [ -n "${ALT_LWR_ALLIANCE_ID:-}" ]; then
+  VORSCHLAG_LWR="${ALT_BASIS:-https://lastwarrank.com}/alliance/${ALT_LWR_ALLIANCE_ID}"
+fi
+
+frage LWR_ALLIANZ_URL "Adresse der Allianzseite bei lastwarrank" "$VORSCHLAG_LWR"
+
+# Die Adresse aus dem Browser enthält beides. Sie hier zu zerlegen ist
+# freundlicher, als zweimal nach Teilen derselben Zeichenkette zu fragen –
+# genau daran ist die erste Fassung gescheitert.
+if [[ "$LWR_ALLIANZ_URL" =~ ^(https?://[^/]+)/alliance/([0-9a-fA-F]+) ]]; then
+  LWR_BASE_URL="${BASH_REMATCH[1]}"
+  LWR_ALLIANCE_ID="${BASH_REMATCH[2]}"
+  ok "Erkannt: $LWR_BASE_URL · Kennung ${LWR_ALLIANCE_ID:0:8}…"
+elif [ -n "$LWR_ALLIANZ_URL" ]; then
+  # Keine vollständige Adresse – dann war es vermutlich nur die Kennung.
+  LWR_BASE_URL="${ALT_BASIS:-https://lastwarrank.com}"
+  LWR_ALLIANCE_ID="$LWR_ALLIANZ_URL"
+  warn "Als reine Kennung gelesen, Server bleibt $LWR_BASE_URL"
+else
+  LWR_BASE_URL="${ALT_BASIS:-https://lastwarrank.com}"
+  LWR_ALLIANCE_ID=""
+fi
+
+frage THP_API_URL "Adresse der Spieler-Rangliste (leer lassen, wenn unbekannt)" ""
 
 # ── Anwendung ──────────────────────────────────────────────────────────────
 titel "Anwendung"

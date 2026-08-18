@@ -98,7 +98,7 @@ npm run dev               # http://localhost:3000
 | `NEXT_PUBLIC_ALLIANZ_NAME` | Ausgeschriebener Name, z.B. `Concilium Venatoris` |
 | `NEXT_PUBLIC_SERVER_ID` | Servernummer, z.B. `1580` |
 | `LWR_BASE_URL` | Adresse der lastwarrank-Instanz, Standard `https://lastwarrank.com` |
-| `LWR_ALLIANCE_ID` | Allianz-Kennung bei lastwarrank – ohne sie bleiben Serverstellung und Mitgliederabgleich leer |
+| `LWR_ALLIANCE_ID` | Allianz-Kennung bei lastwarrank – ohne sie bleiben Serverstellung und Mitgliederabgleich leer. Das Einrichtungsskript fragt stattdessen nach der Adresse der Allianzseite und zerlegt sie in beide Werte |
 | `THP_API_URL` | Optionaler Endpunkt für Hero-Power-Werte. Leer lassen → Paste-Import |
 | `THP_SERVER_ID` | Server-ID für den THP-Abruf (setzt `einrichten.sh` auf dieselbe Nummer) |
 | `DISCORD_ABSENCE_WEBHOOK` | Optional – Meldungen bei Abwesenheiten |
